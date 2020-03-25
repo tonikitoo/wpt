@@ -70,6 +70,16 @@ function checkResult(scenario, expectation, result) {
     // external <iframe>.
     referrerSource = location.toString();
   }
+
+  // If subresource is static-import, referrer url should points to top-level
+  // script which statically imports.
+  const isStaticImport = ['worker-import', 'sharedworker-import']
+      .includes(scenario.subresource);
+  if (isStaticImport) {
+    referrerSource =
+        new URL(workerUrlThatImports(result.testUrl), location.href);
+  }
+
   const expectedReferrerUrl =
     referrerUrlResolver[expectation](referrerSource);
 

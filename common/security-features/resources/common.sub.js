@@ -1094,7 +1094,8 @@ function invokeRequest(subresource, sourceContextList) {
         subresource.url,
         additionalAttributes)
       .then(result => Object.assign(
-          {sourceContextUrl: location.toString()},
+          {sourceContextUrl: location.toString(),
+           testUrl: subresource.url},
           result));
   }
 
