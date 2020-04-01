@@ -1,0 +1,291 @@
+<!doctype html>
+<html>
+  <head>
+    <title>
+      k-rate AudioParams with inputs for OscillatorNode
+    </title>
+    <script src="/resources/testharness.js"></script>
+    <script src="/resources/testharnessreport.js"></script>
+    <script src="/webaudio/resources/audit.js"></script>
+    <script src="/webaudio/resources/audit-util.js"></script>
+  </head>
+
+  <body>
+    <script>
+      let audit = Audit.createTaskRunner();
+
+      audit.define(
+          {label: 'Osc Frequency', description: 'k-rate input'},
+          (task, should) => {
+            // Test that an input to the frequency AudioParam set to k-rate
+            // works.  Threshold experimentally determined.  It should be
+            // probably not be much larger than 5e-5. or something is not right.
+            testParam(should, {param: 'frequency', threshold: 2.0557e-5})
+                .then(() => task.done());
+          });
+
+      audit.define(
+          {label: 'Osc Detune', description: 'k-rate input'},
+          (task, should) => {
+            // Test that an input to the detune AudioParam set to k-rate works.
+            // Threshold experimentally determined.  It should be probably not
+            // be much larger than 5e-5. or something is not right.
+            testParam(should, {param: 'detune', threshold: 2.9356e-5})
+                .then(() => task.done());
+          });
+
+      audit.define(
+          {
+            label: 'Osc frequency and detune',
+            description: 'k-rate frequency input with a-rate detune'
+          },
+          (task, should) => {
+            // Arbitrary sample rate and duration.
+            const sampleRate = 8000;
+            const testFrames = 5 * RENDER_QUANTUM_FRAMES;
+            let testDuration = testFrames / sampleRate;
+
+            // Two channels: 0 = reference signal, 1 = test signal
+            let context = new OfflineAudioContext({
+              numberOfChannels: 2,
+              sampleRate: sampleRate,
+              length: testDuration * sampleRate
+            });
+
+            let merger = new ChannelMergerNode(
+                context, {numberOfInputs: context.destination.channelCount});
+            merger.connect(context.destination);
+
+            let srcRef = new OscillatorNode(context);
+            srcRef.frequency.automationRate = 'k-rate';
+            srcRef.frequency.setValueAtTime(100, 0);
+            srcRef.frequency.linearRampToValueAtTime(2000, testDuration);
+            srcRef.detune.setValueAtTime(0, 0);
+            srcRef.detune.linearRampToValueAtTime(-2000, testDuration);
+
+            let srcTest = new OscillatorNode(context, {frequency: 0});
+            srcTest.frequency.automationRate = 'k-rate';
+            srcTest.detune.setValueAtTime(0, 0);
+            srcTest.detune.linearRampToValueAtTime(-2000, testDuration);
+
+            let mod = new ConstantSourceNode(context, {offset: 0});
+            mod.offset.setValueAtTime(100, 0);
+            mod.offset.linearRampToValueAtTime(2000, testDuration);
+
+            mod.connect(srcTest.frequency);
+
+            srcRef.connect(merger, 0, 0);
+            srcTest.connect(merger, 0, 1);
+
+            mod.start();
+            srcRef.start();
+            srcTest.start();
+
+            return context.startRendering().then(buffer => {
+              let expected = buffer.getChannelData(0);
+              let actual = buffer.getChannelData(1);
+
+              // The output of the reference and test oscillator should be
+              // exactly equal because the AudioParam values should be exactly
+              // equal.
+              should(actual).beCloseToArray(
+                  expected, {absoluteThreshold: 9.7231e-6});
+            })
+          });
+
+      audit.define(
+          {
+            label: 'Osc frequency and detune 2',
+            description: 'a-rate frequency  with k-rate detune input'
+          },
+          (task, should) => {
+            // Arbitrary sample rate and duration.
+            const sampleRate = 8000;
+            const testFrames = 5 * RENDER_QUANTUM_FRAMES;
+            let testDuration = testFrames / sampleRate;
+
+            // Two channels: 0 = reference signal, 1 = test signal
+            let context = new OfflineAudioContext({
+              numberOfChannels: 2,
+              sampleRate: sampleRate,
+              length: testDuration * sampleRate
+            });
+
+            let merger = new ChannelMergerNode(
+                context, {numberOfInputs: context.destination.channelCount});
+            merger.connect(context.destination);
+
+            let srcRef = new OscillatorNode(context);
+            srcRef.frequency.automationRate = 'a-rate';
+            srcRef.frequency.setValueAtTime(100, 0);
+            srcRef.frequency.linearRampToValueAtTime(2000, testDuration);
+            srcRef.detune.automationRate = 'k-rate'
+            srcRef.detune.setValueAtTime(0, 0);
+            srcRef.detune.linearRampToValueAtTime(-2000, testDuration);
+
+            let srcTest = new OscillatorNode(context);
+            srcTest.frequency.automationRate = 'a-rate';
+            srcTest.frequency.setValueAtTime(100, 0);
+            srcTest.frequency.linearRampToValueAtTime(2000, testDuration);
+            srcTest.detune.automationRate = 'k-rate'
+
+
+            let mod = new ConstantSourceNode(context, {offset: 0});
+            mod.offset.setValueAtTime(0, 0);
+            mod.offset.linearRampToValueAtTime(-2000, testDuration);
+
+            mod.connect(srcTest.detune);
+
+            srcRef.connect(merger, 0, 0);
+            srcTest.connect(merger, 0, 1);
+
+            mod.start();
+            srcRef.start();
+            srcTest.start();
+
+            return context.startRendering().then(buffer => {
+              let expected = buffer.getChannelData(0);
+              let actual = buffer.getChannelData(1);
+
+              // The output of the reference and test oscillator should be
+              // exactly equal because the AudioParam values should be exactly
+              // equal.
+              should(actual).beCloseToArray(
+                  expected, {absoluteThreshold: 1.4179e-5});
+            })
+          });
+
+      audit.define(
+          {
+            label: 'Osc frequency and detune 3',
+            description: 'a-rate inputs for frequency and detune'
+          },
+          (task, should) => {
+            // Arbitrary sample rate and duration.
+            const sampleRate = 8000;
+            const testFrames = 5 * RENDER_QUANTUM_FRAMES;
+            let testDuration = testFrames / sampleRate;
+
+            // Two channels: 0 = reference signal, 1 = test signal
+            let context = new OfflineAudioContext({
+              numberOfChannels: 2,
+              sampleRate: sampleRate,
+              length: testDuration * sampleRate
+            });
+
+            let merger = new ChannelMergerNode(
+                context, {numberOfInputs: context.destination.channelCount});
+            merger.connect(context.destination);
+
+            let srcRef = new OscillatorNode(context);
+            srcRef.frequency.automationRate = 'k-rate';
+            srcRef.frequency.setValueAtTime(100, 0);
+            srcRef.frequency.linearRampToValueAtTime(2000, testDuration);
+            srcRef.detune.automationRate = 'k-rate'
+            srcRef.detune.setValueAtTime(0, 0);
+            srcRef.detune.linearRampToValueAtTime(-2000, testDuration);
+
+            let srcTest =
+                new OscillatorNode(context, {frequency: 0, detune: 0});
+            srcTest.frequency.automationRate = 'k-rate';
+            srcTest.detune.automationRate = 'k-rate';
+
+            let modF = new ConstantSourceNode(context, {offset: 0});
+            modF.offset.setValueAtTime(100, 0);
+            modF.offset.linearRampToValueAtTime(2000, testDuration);
+
+            modF.connect(srcTest.frequency);
+
+            let modD = new ConstantSourceNode(context, {offset: 0});
+            modD.offset.setValueAtTime(0, 0);
+            modD.offset.linearRampToValueAtTime(-2000, testDuration);
+
+            modD.connect(srcTest.detune);
+
+            srcRef.connect(merger, 0, 0);
+            srcTest.connect(merger, 0, 1);
+
+            modF.start();
+            modD.start();
+            srcRef.start();
+            srcTest.start();
+
+            return context.startRendering().then(buffer => {
+              let expected = buffer.getChannelData(0);
+              let actual = buffer.getChannelData(1);
+
+              // The output of the reference and test oscillator should be
+              // exactly equal because the AudioParam values should be exactly
+              // equal.
+              should(actual).beCloseToArray(
+                  expected, {absoluteThreshold: 8.9882e-6});
+            })
+          });
+
+      audit.run();
+
+      function testParam(should, options) {
+        // Arbitrary sample rate and duration.
+        const sampleRate = 8000;
+        const testFrames = 5 * RENDER_QUANTUM_FRAMES;
+        let testDuration = testFrames / sampleRate;
+
+        // Two channels: 0 = reference signal, 1 = test signal
+        let context = new OfflineAudioContext({
+          numberOfChannels: 2,
+          sampleRate: sampleRate,
+          length: testDuration * sampleRate
+        });
+
+        let merger = new ChannelMergerNode(
+            context, {numberOfInputs: context.destination.channelCount});
+        merger.connect(context.destination);
+
+        // Reference oscillator using automations on the timeline to produce the
+        // expected k-rate output.
+        let srcRef = new OscillatorNode(context);
+        srcRef[options.param].automationRate = 'k-rate';
+
+        // Fairly arbitrary start and end values for the AudioParam that are
+        // valid for both the
+        // frequency and detune AudioParams.
+        srcRef[options.param].setValueAtTime(100, 0);
+        srcRef[options.param].linearRampToValueAtTime(2000, testDuration);
+
+        // Test oscillator with a k-rate AudioParam with in input signal.
+        let srcTest = new OscillatorNode(context);
+        srcTest[options.param].automationRate = 'k-rate';
+
+        // Set the value to 0 so that when the input is summed, we only get the
+        // input signal and not the addition of the intrinsic value.
+        srcTest[options.param].value = 0;
+
+        // Input signal to the oscillator AudioParam.  This must have the same
+        // automations as for the reference oscillator so that the values to the
+        // AudioParam are the same.
+        let mod = new ConstantSourceNode(context, {offset: 0});
+        mod.offset.setValueAtTime(100, 0);
+        mod.offset.linearRampToValueAtTime(2000, testDuration);
+
+        mod.connect(srcTest[options.param]);
+
+        srcRef.connect(merger, 0, 0);
+        srcTest.connect(merger, 0, 1);
+
+        mod.start();
+        srcRef.start();
+        srcTest.start();
+
+        return context.startRendering().then(buffer => {
+          let expected = buffer.getChannelData(0);
+          let actual = buffer.getChannelData(1);
+
+          // The output of the reference and test oscillator should be exactly
+          // equal because the AudioParam values should be exactly equal.
+          should(actual).beCloseToArray(
+              expected, {absoluteThreshold: options.threshold || 00});
+        })
+      }
+    </script>
+  </body>
+</html>
