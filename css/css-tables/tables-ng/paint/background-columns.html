@@ -1,0 +1,340 @@
+<!doctype html>
+<script src='/resources/testharness.js'></script>
+<script src='/resources/testharnessreport.js'></script>
+<script src="/resources/check-layout-th.js"></script>
+<link rel="stylesheet" type="text/css" href="../support/tables-ng.css">
+<link rel="author" title="Aleks Totic" href="atotic@chromium.org" />
+<link rel="help" href="https://drafts.csswg.org/css-tables-3/" />
+
+
+<style>
+  :root {
+    --transparent: rgba(0,0,0,0);
+    --red: rgba(255,0,0,0.5);
+    --green: rgba(0,255,0,0.5);
+    --blue: rgba(0,0,255,0.5);
+    --yellow: rgba(255, 255, 126, 0.5);
+    --orange: rgba(255, 165, 0, 0.5);
+    --gray20: rgba(20, 20, 20, 0.5);
+    --gray100: rgba(100, 100, 100, 0.5);
+    --gray200: rgba(200,200,200,0.5);
+    --brown: rgba(255, 248, 220, 0.5);
+  }
+  table {
+    border-spacing:10px;
+    border-collapse: separate;
+    border: 5px solid #333;
+  }
+  table:hover {
+    border-collapse: collapse;
+  }
+
+  td {
+    padding: 0;
+    width:50px;
+    height:40px;
+    border: 1px solid gray;
+  }
+
+  .solid {
+    background: rgba(0,0,255,0.3);
+  }
+  .stripe-v {
+     background-image: repeating-linear-gradient(90deg,
+      var(--gray200), var(--gray200) 10px,
+      var(--blue) 10px, var(--blue) 20px);
+  }
+  .stripe-h {
+     background-image: repeating-linear-gradient(0deg,
+      var(--gray200),  var(--gray200), 10px,
+      var(--yellow) 10px, var(--yellow) 20px);
+  }
+  .rainbow-h {
+    background-color: white;
+    background-image: repeating-linear-gradient(to bottom,
+      var(--transparent) 0px, var(--transparent) 10px,
+      var(--red) 10px, var(--red) 20px,
+      var(--green) 20px, var(--green) 30px,
+      var(--blue) 30px, var(--blue) 40px,
+      var(--yellow) 40px, var(--yellow) 50px,
+      var(--orange) 50px, var(--orange)  60px,
+      var(--gray20) 60px, var(--gray20)  70px,
+      var(--gray100) 70px, var(--gray100)  80px,
+      var(--gray200),  var(--gray200) 10px,
+      var(--brown) 80px, var(--brown)  90px
+      );
+   }
+  .rainbow-v {
+    background-color: white;
+    background-image: repeating-linear-gradient(to right,
+      var(--transparent) 0px, var(--transparent) 10px,
+      var(--red) 10px, var(--red) 20px,
+      var(--green) 20px, var(--green) 30px,
+      var(--blue) 30px, var(--blue) 40px,
+      var(--yellow) 40px, var(--yellow) 50px,
+      var(--orange) 50px, var(--orange)  60px,
+      var(--gray20) 60px, var(--gray20)  70px,
+      var(--gray100) 70px, var(--gray100)  80px,
+      var(--gray200),  var(--gray200) 10px,
+      var(--brown) 80px, var(--brown)  90px
+      );
+   }
+   .smooth-v {
+    background-image: linear-gradient(to right,
+      var(--transparent) 0%, black 100%);
+   }
+  .smooth-h {
+     background-image: linear-gradient(to bottom,
+      var(--transparent) 0%, black 100%);
+   }
+  .square {
+    display:inline-block;
+    width:100px;
+    height:100px;
+  }
+  .littlesquare {
+    display:inline-block;
+    min-width:100px;
+    height:25px;
+  }
+  .animated {
+    background-image: url(../support/animation.gif);
+    background-size: contain;
+  }
+</style>
+<h1>Painting of colgroups</h1>
+<ol>
+  <li>colgroup and cols each paint a layer, even if they overlap.</li>
+</ol>
+<p>What happens with large cells? They span multiple columns/rows. What happens when a background image gets painted?</p>
+<ol>
+<li>Where is image's origin?</li>
+<li>What is image's size?</li>
+<li>repeating linear gradient origin is unclear?</li>
+</ol>
+</p>
+<p>colors</p>
+<div class="littlesquare" style="background: var(--ltgray)">ltgray</div>
+<div class="littlesquare" style="background: var(--blue)">blue</div>
+<div class="littlesquare" style="background: var(--red)">red</div>
+<div class="littlesquare" style="background: var(--green)">green</div>
+<div class="littlesquare" style="background: var(--yellow)">yellow</div>
+<div class="littlesquare" style="background: var(--orange)">orange</div>
+<p>patterns</p>
+<div class="square stripe-h">stripe-h</div>
+<div class="square stripe-v">stripe-v</div>
+<div class="square rainbow-h">rainbow-h</div>
+<div class="square rainbow-v">rainbow-v</div>
+<div class="square smooth-h">smooth-h</div>
+<div class="square smooth-v">smooth-v</div>
+
+<h2>Colgroup and wide cells</h2>
+
+<p class="testdesc">Wide cell and background-color.
+  Solid color paints the whole background of all cells whose start cell is in the colgroup.
+</p>
+<table>
+  <colgroup></colgroup>
+  <colgroup span=2 style="background-color:var(--yellow)"></colgroup>
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan=3></td>
+  </tr>
+  <tr>
+    <td colspan=3 rowspan=1></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td colspan=2></td>
+  </tr>
+</table>
+
+<p class="testdesc">Wide cell and background-image:gradients
+<p class="error">
+  <li>Chrome paints gradient into each cell separately. This can look awkward, especially
+  <li>FF
+  <li>FF:gradient covers only the colgroup. Edge/Chrome: gradient covers the entire background.
+  <li>Chrome: images are painted separately for each cell, and pattens do not line up for tall cells.
+</p>
+<table>
+  <colgroup></colgroup>
+  <colgroup span=2 style="background-color:var(--yellow)" class="rainbow-v"></colgroup>
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan=3></td>
+  </tr>
+  <tr>
+    <td colspan=3 rowspan=1></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td colspan=2></td>
+  </tr>
+</table>
+<table>
+  <colgroup></colgroup>
+  <colgroup span=2 style="background-color:var(--yellow)" class="smooth-v"></colgroup>
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan=3></td>
+  </tr>
+  <tr>
+    <td colspan=3 rowspan=1></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td colspan=2></td>
+  </tr>
+</table>
+
+<p class="testdesc">background-size
+  Background container rect differs for Chrome and Firefox:
+  Chrome uses cell's rect as background container rect. This makes images not line up with wide cells.
+  Firefox uses colgroup's rect as background container rect.
+  Edge does something in-between.
+  </p>
+<table>
+  <colgroup></colgroup>
+  <colgroup span=2 style="background-color:var(--yellow);background-size:contain" class="animated"></colgroup>
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan=3></td>
+  </tr>
+  <tr>
+    <td colspan=3 rowspan=1>contain</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td colspan=2></td>
+  </tr>
+</table>
+<table>
+  <colgroup></colgroup>
+  <colgroup span=2 style="background-color:var(--yellow);background-size:cover" class="animated"></colgroup>
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan=3></td>
+  </tr>
+  <tr>
+    <td colspan=3 rowspan=1>cover</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td colspan=2></td>
+  </tr>
+</table>
+<table>
+  <colgroup></colgroup>
+  <colgroup span=2 style="background-color:var(--yellow);background-size:50%" class="animated"></colgroup>
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan=3></td>
+  </tr>
+  <tr>
+    <td colspan=3 rowspan=1>50%</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td colspan=2></td>
+  </tr>
+</table>
+<p class="testdesc">What about TBODY?</p>
+<table>
+  <tbody style="background-color:var(--yellow);background-size:contain" class="animated">
+   <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan=3></td>
+  </tr>
+  <tr>
+    <td colspan=3 rowspan=1>50%</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td colspan=2></td>
+  </tr>
+  </tbody>
+<script>
+  let animation = null;
+  function animateGradientAngle(el) {
+    let angleStep = _ => {
+      let lg = window.getComputedStyle(el).backgroundImage;
+      consoleXXX.log("old lg", lg);
+      let deg = parseInt(lg.match(/(\d+)deg/)[1]);
+
+      let newDeg = deg + 1;
+      if (newDeg > 360)
+        newDeg = 0;
+      let newLg = lg.replace(deg + "deg", newDeg + "deg");
+      consoleXXX.log("new lg", newLg);
+      el.style.backgroundImage = newLg;
+      animation = window.setXXXTimeout(angleStep, 60);
+    };
+    animation  =window.setXXXTimeout(angleStep, 60);
+  }
+  document.addEventListener("click", ev => {
+    if (window.getComputedStyle(ev.target).backgroundImage) {
+      if (animation) {
+        window.clearTimeout(animation);
+        animation = null;
+      } else {
+        animateGradientAngle(ev.target);
+      }
+    }
+  });
+</script>
