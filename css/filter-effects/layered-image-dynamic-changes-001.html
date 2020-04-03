@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<title>CSS Filters: Layered images and dynamic style changes</title>
+<link rel="author" title="Noel Gordon" href="mailto:noel@chromium.org">
+<link rel="help" href="https://drafts.fxtf.org/filter-effects-1/#FilterProperty">
+<link rel="help" href="https://drafts.csswg.org/css-will-change/#will-change">
+<link rel="help" href="https://bugs.chromium.org/p/chromium/issues/detail?id=405803">
+<link rel="match" href="reference/layered-image-dynamic-changes-001-expected.html">
+<meta name="assert" content="Creates a directly composited image, apply a CSS filter to it and check the image gets rendered with the selected filter. You should see a bright pink box."/>
+
+<style>
+.composited {
+  will-change: transform;
+}
+
+.filter {
+  filter: invert(100%);
+}
+</style>
+
+<script src="/common/reftest-wait.js"></script>
+<script>
+function load(element) {
+  element.classList.add('filter');
+  takeScreenshotDelayed(0);
+}
+</script>
+
+<body>
+  <img class="composited" onload="load(this)" src="/images/green-256x256.png">
+</body>
+</html>
